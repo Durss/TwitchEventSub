@@ -30,7 +30,9 @@ npm install
 ```
 
 ## Run server
-Once you configured verything as listed above, just run the server :
+Once you configured everything as listed above, just run the server :
 ```
 node index.js
 ```
+
+On first run the console should log an URL to authorize the app with specified scopes
