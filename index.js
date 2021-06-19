@@ -15,17 +15,28 @@ const SERVER_PORT = 3000;
 const NGROK_AUTH_TOKEN = "";
 //Twitch user ID
 const TWITCH_BROADCASTER_ID = "";
-//Twitch scopes to request
-const TWITCH_SCOPES = "channel:read:subscriptions+bits:read+channel:manage:redemptions+channel:manage:predictions+channel:manage:polls";
 //Client ID of a twitch APP
 const TWITCH_CLIENT_ID = "";
 //Secret ID of a twitch APP
 const TWITCH_CLIENT_SECRET = "";
 //Key used to generate a validation hash. Write anything you want!
 const TWITCH_EVENTSUB_SECRET = "";
+//Twitch scopes to request
+const TWITCH_SCOPES = [
+							// "user:read:email",
+							// "bits:read",
+							// "channel:moderate",
+							// "moderation:read",
+							// "channel:read:subscriptions",
+							// "channel:manage:redemptions",
+							// "channel:manage:predictions",
+							// "channel:manage:polls",
+							// "channel:read:hype_train",
+						].join("+");
 const EVENTS_TO_SUB_TO = [
 							"channel.follow",
 							// "channel.channel_points_custom_reward_redemption.add",
+							// "channel.hype_train.begin",
 							// "channel.poll.begin",
 							// "channel.poll.progress",
 							// "channel.poll.end",
@@ -34,7 +45,6 @@ const EVENTS_TO_SUB_TO = [
 							// "channel.prediction.lock",
 							// "channel.prediction.end"
 						];
-
 
 let webhookUrl;
 let twitchCredentialToken;
@@ -64,15 +74,15 @@ app.post("/api/eventsubcallback", (req,res) => {
 		let ts = req.headers["twitch-eventsub-message-timestamp"];
 		let hash = "sha256="+HmacSHA256(id+ts+JSON.stringify(req.body), TWITCH_EVENTSUB_SECRET).toString();
 		if(hash != sig) {
-			console.error("Invalid signature challenge")
+			console.log(LogStyle.FgRed+"Invalid signature challenge"+LogStyle.Reset)
 			res.status(401);
 			return;
 		}
-		console.log("EventSub challenge completed for "+json.subscription.type)
+		console.log(LogStyle.FgGreen+"EventSub challenge completed for "+json.subscription.type+LogStyle.Reset);
 		res.status(200).send(req.body.challenge);
 
 	}else{
-		console.log("New EventSub : "+json.subscription.type);
+		console.log(LogStyle.FgCyan+"New EventSub : "+json.subscription.type+LogStyle.Reset);
 
 		let data = req.body.event;//Contains event's data
 		console.log(data);
@@ -81,7 +91,7 @@ app.post("/api/eventsubcallback", (req,res) => {
 
 //Crate server
 app.listen(SERVER_PORT, () => {
-    console.log('Server is up on PORT '+SERVER_PORT);
+    console.log(LogStyle.FgGreen+'Server ready on PORT '+SERVER_PORT+LogStyle.Reset);
 	connect();
 })
 
@@ -124,7 +134,7 @@ async function createTwitchClientCredentialToken() {
 				// console.log("\n\n");
 				resolve(json.access_token);
 			}else{
-				console.error("TOKEN creation failed");
+				console.log(LogStyle.FgRed+"TOKEN creation failed"+LogStyle.Reset);
 				console.log(await result.text());
 				reject();
 			}
@@ -156,7 +166,7 @@ async function unsubPrevious() {
 	}
 	for (let i = 0; i < json.data.length; i++) {
 		const e = json.data[i];
-		console.log("Cleanup prev EventSub",e.id);
+		console.log(LogStyle.FgCyan+"Cleaning up previous EventSub",e.id,LogStyle.Reset);
 		if(e.transport.callback.indexOf("ngrok") > -1) {
 			let opts = {
 				method:"DELETE",
@@ -167,7 +177,7 @@ async function unsubPrevious() {
 				}
 			}
 			fetch("https://api.twitch.tv/helix/eventsub/subscriptions?id="+e.id, opts).catch(error=>{
-				console.error("EventSub Cleanup error for:", e.type)
+				console.log(LogStyle.FgRed+"EventSub Cleanup error for:", e.type, LogStyle.Reset)
 			})
 		}
 	}
@@ -211,7 +221,7 @@ async function subToType(type) {
 			logOAuthURL();
 		}
 	}catch(error) {
-		console.error("EventSub subscription error for event:", type);
+		console.error(LogStyle.FgRed+"EventSub subscription error for event:", type, LogStyle.Reset);
 		//Try again
 		setTimeout(_=> {
 			subToType(type);
@@ -220,8 +230,40 @@ async function subToType(type) {
 	}
 }
 
+/**
+ * Logs the authorization URL on console
+ */
 function logOAuthURL() {
-	console.error("Authorization must be granted to the Twitch app !");
-	console.error("Open this URL on the browser");
+	console.log(LogStyle.FgRed+"Authorization must be granted to the Twitch app !"+LogStyle.Reset);
+	console.log(LogStyle.FgRed+"Open this URL on your browser:"+LogStyle.Reset);
 	console.log(LogStyle.BgRed+"https://id.twitch.tv/oauth2/authorize?client_id="+TWITCH_CLIENT_ID+"&redirect_uri=http%3A%2F%2Flocalhost%3A"+SERVER_PORT+"%2Foauth&response_type=token&scope="+TWITCH_SCOPES+LogStyle.Reset);
+}
+
+
+class LogStyle {
+	static Reset = "\x1b[0m";
+	static Bright = "\x1b[1m";
+	static Dim = "\x1b[2m";
+	static Underscore = "\x1b[4m";
+	static Blink = "\x1b[5m";
+	static Reverse = "\x1b[7m";
+	static Hidden = "\x1b[8m";
+
+	static FgBlack = "\x1b[30m";
+	static FgRed = "\x1b[31m";
+	static FgGreen = "\x1b[32m";
+	static FgYellow = "\x1b[33m";
+	static FgCyan = "\x1b[34m";
+	static FgMagenta = "\x1b[35m";
+	static FgCyan = "\x1b[36m";
+	static FgWhite = "\x1b[37m";
+
+	static BgBlack = "\x1b[40m";
+	static BgRed = "\x1b[41m";
+	static BgGreen = "\x1b[42m";
+	static BgYellow = "\x1b[43m";
+	static BgBlue = "\x1b[44m";
+	static BgMagenta = "\x1b[45m";
+	static BgCyan = "\x1b[46m";
+	static BgWhite = "\x1b[47m";
 }

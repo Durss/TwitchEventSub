@@ -20,7 +20,9 @@ https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types
 3. Find you twitch user ID and set it on the **TWITCH_BROADCASTER_ID** var.\
 You can get your twitch ID from your twitch name via [this page](https://www.streamweasels.com/support/convert-twitch-username-to-user-id/).
 
-4. Finally, you must define the scopes that your twitch app will be granted access to in the **TWITCH_SCOPES** var.\
+4. Define a **TWITCH_EVENTSUB_SECRET** key. Just write anything you want as a value. Anything genitally related will do 😏.
+
+5. Finally, you must define the scopes that your twitch app will be granted access to in the **TWITCH_SCOPES** var.\
 The avaiable scopes are described on every event's descriptions of [this page](https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types).
 
 ## Install dependencies
