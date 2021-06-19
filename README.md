@@ -37,4 +37,4 @@ Once you configured everything as listed above, just run the server :
 node index.js
 ```
 
-On first run the console should log an URL to authorize the app with specified scopes
+On first run the console should log an URL to authorize the app with specified scopes, just open it on your browserr, click "accept" and your app will be granted access to everything. If you later request a new scope/event, the same message will be displayed.
