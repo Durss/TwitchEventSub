@@ -151,7 +151,7 @@ async function unsubPrevious() {
 	let res = await fetch("https://api.twitch.tv/helix/eventsub/subscriptions", opts);
 	let json = await res.json();
 	if(res.status == 401) {
-		this.logOAuthURL();
+		logOAuthURL();
 		return;
 	}
 	for (let i = 0; i < json.data.length; i++) {
@@ -208,7 +208,7 @@ async function subToType(type) {
 	try {
 		let res = await fetch("https://api.twitch.tv/helix/eventsub/subscriptions", opts);
 		if(res.status == 403) {
-			this.logOAuthURL();
+			logOAuthURL();
 		}
 	}catch(error) {
 		console.error("EventSub subscription error for event:", type);
