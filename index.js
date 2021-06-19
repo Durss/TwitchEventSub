@@ -11,28 +11,24 @@ const HmacSHA256 = require('crypto-js').HmacSHA256;
 
 //Port of the local server to create that will create the eventsub webhook
 const SERVER_PORT = 3000;
+
 //Create a (free) account on https://ngrok.com and generate a token
 const NGROK_AUTH_TOKEN = "";
+
 //Twitch user ID
 const TWITCH_BROADCASTER_ID = "";
+
 //Client ID of a twitch APP
 const TWITCH_CLIENT_ID = "";
+
 //Secret ID of a twitch APP
 const TWITCH_CLIENT_SECRET = "";
+
 //Key used to generate a validation hash. Write anything you want!
 const TWITCH_EVENTSUB_SECRET = "";
-//Twitch scopes to request
-const TWITCH_SCOPES = [
-							// "user:read:email",
-							// "bits:read",
-							// "channel:moderate",
-							// "moderation:read",
-							// "channel:read:subscriptions",
-							// "channel:manage:redemptions",
-							// "channel:manage:predictions",
-							// "channel:manage:polls",
-							// "channel:read:hype_train",
-						].join("+");
+
+//Events to subscribe to
+//Full list available here : https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types
 const EVENTS_TO_SUB_TO = [
 							"channel.follow",
 							// "channel.channel_points_custom_reward_redemption.add",
@@ -46,10 +42,44 @@ const EVENTS_TO_SUB_TO = [
 							// "channel.prediction.end"
 						];
 
+//Twitch scopes to request access to.
+//Full list available here : https://dev.twitch.tv/docs/eventsub/eventsub-subscription-types
+const TWITCH_SCOPES = [
+							// "user:read:email",
+							// "bits:read",
+							// "channel:moderate",
+							// "moderation:read",
+							// "channel:read:subscriptions",
+							// "channel:manage:redemptions",
+							// "channel:manage:predictions",
+							// "channel:manage:polls",
+							// "channel:read:hype_train",
+						].join("+");
+
+/**
+ * Function called everytime a new event is fired by twitch.
+ * The duplicates filtering is already managed. (twitch sends one event multiple times)
+ * Do what you want on this method
+ */
+function onEvent(data) {
+	console.log(data);
+}
+
+
+
+
+
+//=========================================================
+//=== YOU SHOULD NOT NEED TO CHANGE ANYTHING BELOW THIS ===
+//=========================================================
+
+
+
+
+
 let webhookUrl;
 let twitchCredentialToken;
 let parsedEvents = {};
-
 const app = express();
 app.use(express.json());
 
@@ -83,19 +113,22 @@ app.post("/api/eventsubcallback", (req,res) => {
 
 	}else{
 		console.log(LogStyle.FgCyan+"New EventSub : "+json.subscription.type+LogStyle.Reset);
-
-		let data = req.body.event;//Contains event's data
-		console.log(data);
+		onEvent(json.event);
 	}
 });
 
 //Crate server
 app.listen(SERVER_PORT, () => {
     console.log(LogStyle.FgGreen+'Server ready on PORT '+SERVER_PORT+LogStyle.Reset);
-	connect();
+	start();
 })
 
-async function connect() {
+/**
+ * Starts the eventsub process.
+ * Creates the HTTPS webhook and subscribe to requested events after
+ * unsubscribing to old ones.
+ */
+async function start() {
 	webhookUrl = await ngrok.connect({authtoken: NGROK_AUTH_TOKEN, addr:SERVER_PORT, proto:"http"});
 
 	//Authenticated
@@ -113,8 +146,6 @@ async function connect() {
 
 /**
  * Creates a credential token
- * 
- * @returns 
  */
 async function createTwitchClientCredentialToken() {
 	if(twitchCredentialToken) return Promise.resolve(twitchCredentialToken);
@@ -146,8 +177,6 @@ async function createTwitchClientCredentialToken() {
 
 /**
  * Unsubscribes previous webhooks
- * 
- * @returns 
  */
 async function unsubPrevious() {
 	let opts = {
