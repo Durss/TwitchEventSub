@@ -97,6 +97,7 @@ app.post("/api/eventsubcallback", (req,res) => {
 		// console.log("Ignore", id);
 		return;
 	}
+	parsedEvents[id] = true;
 	
 	if(json.subscription.status == "webhook_callback_verification_pending") {
 		//Challenging signature
