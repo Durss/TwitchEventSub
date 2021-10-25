@@ -135,7 +135,7 @@ async function start() {
 	await createTwitchClientCredentialToken();
 
 	//Unsubs previous webhooks created by the twitch app
-	await unsubPrevious();
+	if(!await unsubPrevious()) return;//If it returns false, it's because authentication failed
 
 	//Subscribes to events with the newly created webhook URL
 	for (let i = 0; i < EVENTS_TO_SUB_TO.length; i++) {
@@ -187,16 +187,29 @@ async function unsubPrevious() {
 			"Content-Type": "application/json",
 		}
 	}
-	let res = await fetch("https://api.twitch.tv/helix/eventsub/subscriptions", opts);
-	let json = await res.json();
-	if(res.status == 401) {
-		logOAuthURL();
-		return;
-	}
-	for (let i = 0; i < json.data.length; i++) {
-		const e = json.data[i];
-		console.log(LogStyle.FgCyan+"Cleaning up previous EventSub",e.id,LogStyle.Reset);
+	let list = [];
+	let json, cursor;
+	do {
+		let url = "https://api.twitch.tv/helix/eventsub/subscriptions";
+		if(cursor) {
+			url += "?after="+cursor;
+		}
+		let res = await fetch(url, opts);
+		json = await res.json();
+		if(res.status == 401) {
+			this.logOAuthURL();
+			return false;
+		}
+		list = list.concat(json.data);
+		cursor = json.pagination?.cursor;
+	}while(cursor != null);
+
+	for (let i = 0; i < list.length; i++) {
+		const e = list[i];
+		//Cleaning up only callbacks containing "ngrok". Change that if not using ngrok.
+		//You may want to simply disable this condition.
 		if(e.transport.callback.indexOf("ngrok") > -1) {
+			console.log(LogStyle.FgCyan+"Cleaning up previous EventSub",e.id,LogStyle.Reset);
 			let opts = {
 				method:"DELETE",
 				headers:{
@@ -210,6 +223,7 @@ async function unsubPrevious() {
 			})
 		}
 	}
+	return true;
 }
 
 /**
