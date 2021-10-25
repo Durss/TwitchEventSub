@@ -95,8 +95,10 @@ app.post("/api/eventsubcallback", (req,res) => {
 	let id = req.headers["twitch-eventsub-message-id"];
 	if(parsedEvents[id] === true) {
 		// console.log("Ignore", id);
+		res.status(200);//Tell twitch to stop trying again and again and again and...
 		return;
 	}
+	parsedEvents[id] = true;
 	
 	if(json.subscription.status == "webhook_callback_verification_pending") {
 		//Challenging signature
